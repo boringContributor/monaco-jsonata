@@ -1,0 +1,61 @@
+{
+  "name": "monaco-jsonata",
+  "version": "1.0.0",
+  "description": "Complete Monaco Editor language extension for JSONata with syntax highlighting, autocomplete, hover documentation, and diagnostics",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "monaco",
+    "monaco-editor",
+    "jsonata",
+    "language",
+    "syntax-highlighting",
+    "autocomplete",
+    "intellisense",
+    "code-completion",
+    "hover",
+    "diagnostics",
+    "formatter",
+    "editor"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/monaco-jsonata.git",
+    "directory": "packages/monaco-jsonata"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/monaco-jsonata/issues"
+  },
+  "homepage": "https://github.com/yourusername/monaco-jsonata#readme",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "prepublishOnly": "pnpm run build"
+  },
+  "peerDependencies": {
+    "monaco-editor": "^0.40.0 || ^0.50.0 || ^0.54.0"
+  },
+  "dependencies": {
+    "jsonata": "^2.1.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "~5.9.3"
+  }
+}

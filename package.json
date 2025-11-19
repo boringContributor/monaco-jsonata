@@ -1,0 +1,17 @@
+{
+  "name": "monaco-jsonata",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monaco JSONata - Language extension and playground",
+  "scripts": {
+    "dev": "pnpm --filter playground dev",
+    "build": "pnpm --filter monaco-jsonata build && pnpm --filter playground build",
+    "build:lib": "pnpm --filter monaco-jsonata build",
+    "lint": "pnpm -r lint"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18",
+    "pnpm": ">=8"
+  }
+}
