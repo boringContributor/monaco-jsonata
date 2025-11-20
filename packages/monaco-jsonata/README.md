@@ -56,11 +56,25 @@ pnpm add monaco-jsonata monaco-editor
 import { useRef } from 'react';
 import Editor from '@monaco-editor/react';
 import type * as Monaco from 'monaco-editor';
-import { registerJsonataLanguage } from 'monaco-jsonata';
+import { registerJsonataLanguage, registerJsonataActions } from 'monaco-jsonata';
+import { formatJsonata } from '@stedi/prettier-plugin-jsonata/dist/lib';
 
 function JSONataEditor() {
+  const monacoRef = useRef<typeof Monaco | null>(null);
+
   const handleEditorWillMount = (monaco: typeof Monaco) => {
-    registerJsonataLanguage(monaco);
+    if (!monacoRef.current) {
+      monacoRef.current = monaco;
+      registerJsonataLanguage(monaco);
+    }
+  };
+
+  const handleEditorMount = (
+    editor: Monaco.editor.IStandaloneCodeEditor,
+    monaco: typeof Monaco
+  ) => {
+    // Add context menu actions (optional)
+    registerJsonataActions(monaco, editor, formatJsonata);
   };
 
   return (
@@ -70,6 +84,7 @@ function JSONataEditor() {
       defaultValue='$sum([1, 2, 3, 4])'
       theme="jsonata-theme"
       beforeMount={handleEditorWillMount}
+      onMount={handleEditorMount}
     />
   );
 }
@@ -174,6 +189,49 @@ const disposable = registerJsonataLanguage(monaco, {
 disposable.dispose();
 ```
 
+### `registerJsonataActions(monaco, editor, formatFunction?)`
+
+Registers editor actions for the JSONata language, such as format commands in the context menu.
+
+**Parameters:**
+
+- `monaco` - The Monaco editor instance
+- `editor` - The standalone code editor instance
+- `formatFunction` (optional) - A formatter function (e.g., `formatJsonata` from `@stedi/prettier-plugin-jsonata`)
+
+**Formatter Function Type:**
+
+```typescript
+type FormatJsonataFunction = (
+  code: string,
+  options?: {
+    printWidth?: number;
+    tabWidth?: number;
+    useTabs?: boolean;
+  }
+) => string | Promise<string>;
+```
+
+**Example:**
+
+```typescript
+import { registerJsonataActions } from 'monaco-jsonata';
+import { formatJsonata } from '@stedi/prettier-plugin-jsonata/dist/lib';
+
+// With formatter (adds "Format JSONata" to context menu)
+const disposable = registerJsonataActions(monaco, editor, formatJsonata);
+
+// Without formatter (no format action)
+const disposable = registerJsonataActions(monaco, editor);
+
+// Later, to clean up:
+disposable.dispose();
+```
+
+**Features Added:**
+- Right-click context menu: "Format JSONata" option
+- Keyboard shortcut: `Cmd+Shift+F` (Mac) / `Ctrl+Shift+F` (Windows/Linux)
+
 ## 🎨 Features in Detail
 
 ### 1. Syntax Highlighting
@@ -249,6 +307,44 @@ Pretty-print JSONata expressions:
 **Programmatic:**
 ```typescript
 editor.getAction('editor.action.formatDocument').run();
+```
+
+**Context Menu & Custom Keyboard Shortcut:**
+
+You can add a "Format JSONata" action to the right-click context menu with a custom keyboard shortcut:
+
+```typescript
+import { registerJsonataLanguage, registerJsonataActions } from 'monaco-jsonata';
+import { formatJsonata } from '@stedi/prettier-plugin-jsonata/dist/lib';
+import type * as Monaco from 'monaco-editor';
+
+function setupEditor(monaco: typeof Monaco) {
+  // Register the language
+  registerJsonataLanguage(monaco);
+
+  // Create the editor
+  const editor = monaco.editor.create(container, {
+    value: '',
+    language: 'jsonata',
+    theme: 'jsonata-theme'
+  });
+
+  // Register editor actions (adds "Format JSONata" to context menu)
+  // Keyboard shortcut: Cmd+Shift+F (Mac) or Ctrl+Shift+F (Windows/Linux)
+  registerJsonataActions(monaco, editor, formatJsonata);
+
+  return editor;
+}
+```
+
+This adds:
+- **Right-click context menu:** "Format JSONata" option
+- **Keyboard shortcut:** `Cmd+Shift+F` (Mac) / `Ctrl+Shift+F` (Windows/Linux)
+
+The formatter function is optional. If you don't need formatting via context menu, you can omit it:
+
+```typescript
+registerJsonataActions(monaco, editor); // No formatter - skips format action
 ```
 
 ### 7. Theme

@@ -3,13 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "description": "Monaco JSONata - Language extension and playground",
+  "packageManager": "pnpm@10.17.1",
   "scripts": {
-    "dev": "pnpm --filter playground dev",
-    "build": "pnpm --filter monaco-jsonata build && pnpm --filter playground build",
-    "build:lib": "pnpm --filter monaco-jsonata build",
-    "lint": "pnpm -r lint"
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "build:lib": "turbo run build --filter=monaco-jsonata",
+    "lint": "turbo run lint"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "turbo": "^2.6.1"
+  },
   "engines": {
     "node": ">=18",
     "pnpm": ">=8"

@@ -8,6 +8,7 @@ export { createHoverProvider } from './hovers';
 export { createSignatureHelpProvider } from './signatures';
 export { createFormattingProvider, createRangeFormattingProvider } from './formatter';
 export { setupDiagnostics, createDiagnostics } from './diagnostics';
+export { registerJsonataActions } from './actions';
 
 // Export function definitions for custom usage
 export {

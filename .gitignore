@@ -53,4 +53,7 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 
+# Turborepo
+.turbo/
+
 .claude

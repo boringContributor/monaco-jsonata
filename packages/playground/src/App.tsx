@@ -3,7 +3,7 @@ import Editor from '@monaco-editor/react';
 import type * as Monaco from 'monaco-editor';
 import jsonata from 'jsonata';
 import { formatJsonata } from '@stedi/prettier-plugin-jsonata/dist/lib';
-import { registerJsonataLanguage } from 'monaco-jsonata';
+import { registerJsonataLanguage, registerJsonataActions } from 'monaco-jsonata';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
 function App() {
@@ -12,6 +12,7 @@ function App() {
   const [output, setOutput] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const monacoRef = useRef<typeof Monaco | null>(null);
+  const jsonataEditorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -19,11 +20,17 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleMonacoMount = (_editor: Monaco.editor.IStandaloneCodeEditor, monaco: typeof Monaco) => {
+  const handleMonacoMount = (editor: Monaco.editor.IStandaloneCodeEditor, monaco: typeof Monaco) => {
     if (!monacoRef.current) {
       monacoRef.current = monaco;
       registerJsonataLanguage(monaco);
     }
+
+    // Store editor reference
+    jsonataEditorRef.current = editor;
+
+    // Register editor actions with format function
+    registerJsonataActions(monaco, editor, formatJsonata);
   };
 
   useEffect(() => {

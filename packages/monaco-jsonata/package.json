@@ -1,6 +1,6 @@
 {
   "name": "monaco-jsonata",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Complete Monaco Editor language extension for JSONata with syntax highlighting, autocomplete, hover documentation, and diagnostics",
   "type": "module",
   "main": "./dist/index.js",
@@ -32,17 +32,17 @@
     "formatter",
     "editor"
   ],
-  "author": "Your Name",
+  "author": "Sebastian Sauerer",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/monaco-jsonata.git",
+    "url": "https://github.com/boringcontributor/monaco-jsonata.git",
     "directory": "packages/monaco-jsonata"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/monaco-jsonata/issues"
+    "url": "https://github.com/boringcontributor/monaco-jsonata/issues"
   },
-  "homepage": "https://github.com/yourusername/monaco-jsonata#readme",
+  "homepage": "https://github.com/boringcontributor/monaco-jsonata#readme",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
