@@ -3,10 +3,6 @@ import { streamText, type UIMessage, convertToModelMessages } from 'ai';
 
 export const maxDuration = 60;
 
-const openrouter = createOpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
-
 const SYSTEM_PROMPT = `You are an expert JSONata assistant embedded in a JSONata playground. You help users create, fix, and adjust JSONata expressions.
 
 JSONata is a lightweight query and transformation language for JSON data. Key features:
@@ -35,6 +31,10 @@ IMPORTANT RULES:
 
 export async function POST(req: Request) {
   const { messages }: { messages: UIMessage[] } = await req.json();
+
+  const openrouter = createOpenRouter({
+    apiKey: process.env.OPENROUTER_API_KEY,
+  });
 
   const model = openrouter(process.env.OPENROUTER_MODEL ?? 'openrouter/free');
 
