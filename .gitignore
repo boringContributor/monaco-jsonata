@@ -53,6 +53,9 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 
+# Next.js
+.next/
+
 # Turborepo
 .turbo/
 
