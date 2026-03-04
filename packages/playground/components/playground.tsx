@@ -5,7 +5,7 @@ import Editor from '@monaco-editor/react';
 import type * as Monaco from 'monaco-editor';
 import jsonata from 'jsonata';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { BotMessageSquareIcon, SparklesIcon } from 'lucide-react';
+import { BotMessageSquareIcon, SparklesIcon, MaximizeIcon, MinimizeIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ChatPanel, type ChatPanelHandle } from './chat-panel';
@@ -36,6 +36,7 @@ export function Playground() {
   const monacoRef = useRef<typeof Monaco | null>(null);
   const jsonataEditorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
   const chatRef = useRef<ChatPanelHandle>(null);
+  const [expandedPanel, setExpandedPanel] = useState<'json' | 'expression' | 'output' | null>(null);
 
   useEffect(() => {
     setIsMobile(window.innerWidth < 768);
@@ -96,11 +97,24 @@ export function Playground() {
     } catch {}
   };
 
+  const formatJsonataRef = useRef<((expr: string) => Promise<string>) | null>(null);
+
   const handleFormatJson = () => {
     try {
       setJsonInput(JSON.stringify(JSON.parse(jsonInput), null, 2));
     } catch {}
   };
+
+  const handleFormatJsonata = useCallback(async () => {
+    try {
+      if (!formatJsonataRef.current) {
+        const { formatJsonata } = await import('@stedi/prettier-plugin-jsonata/dist/lib');
+        formatJsonataRef.current = formatJsonata;
+      }
+      const formatted = await formatJsonataRef.current(jsonataExpression);
+      setJsonataExpression(formatted);
+    } catch {}
+  }, [jsonataExpression]);
 
   const handleApplyExpression = (expression: string) => {
     setJsonataExpression(expression);
@@ -146,7 +160,7 @@ export function Playground() {
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         <PanelGroup direction={isMobile ? 'vertical' : 'horizontal'} className="flex-1">
           {/* JSON Input */}
           <Panel defaultSize={30} minSize={15}>
@@ -160,6 +174,14 @@ export function Playground() {
                   <Button variant="secondary" size="sm" onClick={handleFormatJson}>
                     Format
                   </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="size-7" onClick={() => setExpandedPanel('json')}>
+                        <MaximizeIcon className="size-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Expand</TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
               <div className="flex-1">
@@ -196,9 +218,22 @@ export function Playground() {
             <div className="flex flex-col h-full">
               <div className="bg-card border-b border-border px-4 py-2 flex items-center justify-between">
                 <h3 className="text-sm font-medium">JSONata Expression</h3>
-                <Button variant="ghost" size="sm" onClick={() => handleCopy(jsonataExpression)}>
-                  Copy
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => handleCopy(jsonataExpression)}>
+                    Copy
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={handleFormatJsonata}>
+                    Format
+                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="size-7" onClick={() => setExpandedPanel('expression')}>
+                        <MaximizeIcon className="size-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Expand</TooltipContent>
+                  </Tooltip>
+                </div>
               </div>
               <div className="flex-1">
                 <Editor
@@ -245,6 +280,14 @@ export function Playground() {
                   <Button variant="ghost" size="sm" onClick={() => handleCopy(output)}>
                     Copy
                   </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="size-7" onClick={() => setExpandedPanel('output')}>
+                        <MaximizeIcon className="size-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Expand</TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
               <div className="flex-1">
@@ -279,6 +322,106 @@ export function Playground() {
             hasError={output.startsWith('Error')}
             onApplyExpression={handleApplyExpression}
           />
+        )}
+
+        {/* Expanded panel overlay */}
+        {expandedPanel && (
+          <div className="absolute inset-0 z-50 bg-background flex flex-col">
+            <div className="bg-card border-b border-border px-4 py-2 flex items-center justify-between shrink-0">
+              <h3 className="text-sm font-medium">
+                {expandedPanel === 'json' && 'JSON Input'}
+                {expandedPanel === 'expression' && 'JSONata Expression'}
+                {expandedPanel === 'output' && 'Output'}
+              </h3>
+              <div className="flex items-center gap-2">
+                {expandedPanel === 'json' && (
+                  <>
+                    <Button variant="ghost" size="sm" onClick={() => handleCopy(jsonInput)}>Copy</Button>
+                    <Button variant="secondary" size="sm" onClick={handleFormatJson}>Format</Button>
+                  </>
+                )}
+                {expandedPanel === 'expression' && (
+                  <>
+                    <Button variant="ghost" size="sm" onClick={() => handleCopy(jsonataExpression)}>Copy</Button>
+                    <Button variant="secondary" size="sm" onClick={handleFormatJsonata}>Format</Button>
+                  </>
+                )}
+                {expandedPanel === 'output' && (
+                  <>
+                    {output.startsWith('Error') && (
+                      <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => { setExpandedPanel(null); handleFixWithAI(); }}>
+                        <SparklesIcon className="size-3.5" />
+                        Fix with AI
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="sm" onClick={() => handleCopy(output)}>Copy</Button>
+                  </>
+                )}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="size-7" onClick={() => setExpandedPanel(null)}>
+                      <MinimizeIcon className="size-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Minimize</TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+            <div className="flex-1">
+              {expandedPanel === 'json' && (
+                <Editor
+                  height="100%"
+                  defaultLanguage="json"
+                  value={jsonInput}
+                  onChange={(v) => setJsonInput(v || '')}
+                  theme="vs-dark"
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    scrollBeyondLastLine: false,
+                    automaticLayout: true,
+                    tabSize: 2,
+                    padding: { top: 12 },
+                  }}
+                />
+              )}
+              {expandedPanel === 'expression' && (
+                <Editor
+                  height="100%"
+                  defaultLanguage="jsonata"
+                  value={jsonataExpression}
+                  onChange={(v) => setJsonataExpression(v || '')}
+                  theme="jsonata-theme"
+                  onMount={handleMonacoMount}
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    scrollBeyondLastLine: false,
+                    automaticLayout: true,
+                    tabSize: 2,
+                    padding: { top: 12 },
+                  }}
+                />
+              )}
+              {expandedPanel === 'output' && (
+                <Editor
+                  height="100%"
+                  defaultLanguage="json"
+                  value={output}
+                  theme="vs-dark"
+                  options={{
+                    readOnly: true,
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    scrollBeyondLastLine: false,
+                    automaticLayout: true,
+                    tabSize: 2,
+                    padding: { top: 12 },
+                  }}
+                />
+              )}
+            </div>
+          </div>
         )}
       </div>
 
