@@ -1,8 +1,8 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
-import { useCallback, useRef, useState } from 'react';
-import { CheckIcon, XIcon } from 'lucide-react';
+import { useCallback, useImperativeHandle, useRef, useState } from 'react';
+import { CheckIcon, XIcon, LoaderIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -32,12 +32,17 @@ import {
   CodeBlockCopyButton,
 } from '@/components/ai-elements/code-block';
 
+export interface ChatPanelHandle {
+  sendSuggestion: (suggestion: string) => void;
+}
+
 interface ChatPanelProps {
   jsonInput: string;
   jsonataExpression: string;
   output: string;
   hasError: boolean;
   onApplyExpression: (expression: string) => void;
+  ref?: React.Ref<ChatPanelHandle>;
 }
 
 function extractJsonataBlocks(text: string): string[] {
@@ -153,7 +158,7 @@ function ExpressionConfirmation({ expression, onAccept, onReject, applied, rejec
   );
 }
 
-export function ChatPanel({ jsonInput, jsonataExpression, output, hasError, onApplyExpression }: ChatPanelProps) {
+export function ChatPanel({ jsonInput, jsonataExpression, output, hasError, onApplyExpression, ref }: ChatPanelProps) {
   // Use refs for context values to avoid re-renders on every keystroke
   const contextRef = useRef({ jsonInput, jsonataExpression, output });
   contextRef.current = { jsonInput, jsonataExpression, output };
@@ -179,14 +184,22 @@ ${ctx.output}
 \`\`\``;
   }, []);
 
-  const { messages: rawMessages, status, sendMessage } = useChat();
+  const { messages: rawMessages, status, sendMessage, stop } = useChat();
 
-  // Deduplicate messages — AI SDK v6 can return duplicate IDs during streaming
-  const messages = rawMessages.filter(
-    (msg, idx, arr) => arr.findIndex((m) => m.id === msg.id) === idx,
-  );
+  // Deduplicate and filter empty assistant messages (from stop/cancel)
+  const messages = rawMessages
+    .filter((msg, idx, arr) => arr.findIndex((m) => m.id === msg.id) === idx)
+    .filter((msg) => {
+      if (msg.role === 'assistant') {
+        const text = getMessageText(msg.parts);
+        return text.length > 0;
+      }
+      return true;
+    });
 
   const isStreaming = status === 'streaming';
+  const isSubmitted = status === 'submitted';
+  const isLoading = isStreaming || isSubmitted;
 
   const handleSuggestion = useCallback(
     (suggestion: string) => {
@@ -220,6 +233,10 @@ ${ctx.output}
   const handleReject = useCallback((blockKey: string) => {
     setBlockStates((prev) => ({ ...prev, [blockKey]: 'rejected' }));
   }, []);
+
+  useImperativeHandle(ref, () => ({
+    sendSuggestion: handleSuggestion,
+  }), [handleSuggestion]);
 
   const errorSuggestions = ['Fix my expression', 'Explain the error', 'Rewrite it'];
   const dynamicSuggestions = deriveFieldSuggestions(jsonInput);
@@ -285,6 +302,17 @@ ${ctx.output}
               </Message>
             );
           })}
+
+          {isLoading && messages.length > 0 && !messages[messages.length - 1]?.parts?.some(p => p.type === 'text' && p.text) && (
+            <Message from="assistant">
+              <MessageContent>
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <LoaderIcon className="size-4 animate-spin" />
+                  {isSubmitted ? 'Thinking...' : 'Writing...'}
+                </div>
+              </MessageContent>
+            </Message>
+          )}
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>
@@ -297,7 +325,7 @@ ${ctx.output}
           />
           <PromptInputFooter>
             <div />
-            <PromptInputSubmit status={status} />
+            <PromptInputSubmit status={status} onStop={stop} />
           </PromptInputFooter>
         </PromptInput>
       </div>

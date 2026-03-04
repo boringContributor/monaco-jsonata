@@ -5,10 +5,10 @@ import Editor from '@monaco-editor/react';
 import type * as Monaco from 'monaco-editor';
 import jsonata from 'jsonata';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { BotMessageSquareIcon } from 'lucide-react';
+import { BotMessageSquareIcon, SparklesIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { ChatPanel } from './chat-panel';
+import { ChatPanel, type ChatPanelHandle } from './chat-panel';
 
 const DEFAULT_JSON = `{
   "firstName": "John",
@@ -35,6 +35,7 @@ export function Playground() {
   const [showChat, setShowChat] = useState(true);
   const monacoRef = useRef<typeof Monaco | null>(null);
   const jsonataEditorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
+  const chatRef = useRef<ChatPanelHandle>(null);
 
   useEffect(() => {
     setIsMobile(window.innerWidth < 768);
@@ -104,6 +105,14 @@ export function Playground() {
   const handleApplyExpression = (expression: string) => {
     setJsonataExpression(expression);
   };
+
+  const handleFixWithAI = useCallback(() => {
+    if (!showChat) setShowChat(true);
+    // Small delay to ensure chat is mounted before sending
+    setTimeout(() => {
+      chatRef.current?.sendSuggestion('Fix my expression');
+    }, 100);
+  }, [showChat]);
 
   return (
     <div className="flex flex-col h-screen w-screen">
@@ -226,9 +235,17 @@ export function Playground() {
             <div className="flex flex-col h-full">
               <div className="bg-card border-b border-border px-4 py-2 flex items-center justify-between">
                 <h3 className="text-sm font-medium">Output</h3>
-                <Button variant="ghost" size="sm" onClick={() => handleCopy(output)}>
-                  Copy
-                </Button>
+                <div className="flex items-center gap-2">
+                  {output.startsWith('Error') && (
+                    <Button variant="secondary" size="sm" className="gap-1.5" onClick={handleFixWithAI}>
+                      <SparklesIcon className="size-3.5" />
+                      Fix with AI
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={() => handleCopy(output)}>
+                    Copy
+                  </Button>
+                </div>
               </div>
               <div className="flex-1">
                 <Editor
@@ -255,6 +272,7 @@ export function Playground() {
         {/* AI Chat Panel */}
         {showChat && (
           <ChatPanel
+            ref={chatRef}
             jsonInput={jsonInput}
             jsonataExpression={jsonataExpression}
             output={output}
