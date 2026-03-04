@@ -186,20 +186,20 @@ ${ctx.output}
 
   const { messages: rawMessages, status, sendMessage, stop } = useChat();
 
-  // Deduplicate and filter empty assistant messages (from stop/cancel)
+  const isStreaming = status === 'streaming';
+  const isSubmitted = status === 'submitted';
+  const isLoading = isStreaming || isSubmitted;
+
+  // Deduplicate messages; only filter empty assistant messages when idle (not during streaming)
   const messages = rawMessages
     .filter((msg, idx, arr) => arr.findIndex((m) => m.id === msg.id) === idx)
     .filter((msg) => {
-      if (msg.role === 'assistant') {
+      if (!isLoading && msg.role === 'assistant') {
         const text = getMessageText(msg.parts);
         return text.length > 0;
       }
       return true;
     });
-
-  const isStreaming = status === 'streaming';
-  const isSubmitted = status === 'submitted';
-  const isLoading = isStreaming || isSubmitted;
 
   const handleSuggestion = useCallback(
     (suggestion: string) => {
