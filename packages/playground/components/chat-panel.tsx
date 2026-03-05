@@ -2,7 +2,11 @@
 
 import { useChat } from '@ai-sdk/react';
 import { useCallback, useImperativeHandle, useRef, useState } from 'react';
-import { CheckIcon, XIcon, LoaderIcon } from 'lucide-react';
+import { CheckIcon, XIcon } from 'lucide-react';
+import {
+  Reasoning,
+  ReasoningTrigger,
+} from '@/components/ai-elements/reasoning';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -211,6 +215,7 @@ ${ctx.output}
 
   const handlePromptSubmit = useCallback(
     ({ text }: { text: string }) => {
+      if (!text.trim()) return;
       const contextMessage = `${buildContext()}\n\nUser request: ${text}`;
       sendMessage({ text: contextMessage });
     },
@@ -306,10 +311,9 @@ ${ctx.output}
           {isLoading && messages.length > 0 && !messages[messages.length - 1]?.parts?.some(p => p.type === 'text' && p.text) && (
             <Message from="assistant">
               <MessageContent>
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <LoaderIcon className="size-4 animate-spin" />
-                  {isSubmitted ? 'Thinking...' : 'Writing...'}
-                </div>
+                <Reasoning isStreaming={isLoading}>
+                  <ReasoningTrigger />
+                </Reasoning>
               </MessageContent>
             </Message>
           )}
